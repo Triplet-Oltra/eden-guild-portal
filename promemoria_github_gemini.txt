@@ -1,0 +1,14 @@
+Progetto: Portale Gilda DAoC (Universal Hub)
+
+Struttura: Layout a Sidebar (Menu laterale) con sezioni: Database Item,
+Roster (Omino/Inventory), Mappe, PvP/Keep e Discord.
+
+Tecnologia: HTML statico su GitHub Pages, CSS esterno (charstyle.css), JS esterno (script.js).
+
+Funzionalità Core: Inventory Viewer classico (omino con slot) che pesca dati dal JSON
+ da 23.357 oggetti e mostra il tooltip "Delve" al passaggio del mouse.
+
+Gestione Gilde: Sistema a invito gestito da Romano (Super Admin).
+
+Integrazione: Accesso tramite Discord OAuth2 e database Supabase per memorizzare i permessi
+ (Admin/Officer) e i dati dei membri senza toccare il codice.
