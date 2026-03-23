@@ -1,1 +1,18 @@
-
+[
+  {
+    "id": 1,
+    "name": "Clouded Moon Bracer",
+    "realm": "Hibernia",
+    "slot": "Wrist",
+    "stats": { "con": 15, "hits": 40, "utility": 45.5 },
+    "bonus": "Melee Speed 2%"
+  },
+  {
+    "id": 2,
+    "name": "Dragon-shadow Cloak",
+    "realm": "Albion",
+    "slot": "Cloak",
+    "stats": { "str": 15, "con": 15, "utility": 52.0 },
+    "bonus": "All Resists 5%"
+  }
+]
