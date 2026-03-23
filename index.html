@@ -2,71 +2,96 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Eden Guild Portal - Utility</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eden Guild Portal | Utility & Hardcore</title>
+    
+    <link rel="stylesheet" href="items.css">
+    
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: #eee; padding: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #444; padding: 10px; text-align: left; }
-        th { cursor: pointer; background: #333; }
-        th:hover { background: #555; }
-        input { padding: 8px; width: 300px; background: #222; color: #fff; border: 1px solid #555; }
+        /* Ritocchi per rendere il sito moderno e scuro */
+        body { background: #121212; color: #e0e0e0; font-family: sans-serif; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; }
+        .search-box { margin-bottom: 20px; background: #1e1e1e; padding: 15px; border-radius: 8px; display: flex; gap: 10px; }
+        input, select { padding: 10px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 4px; flex-grow: 1; }
+        
+        table { width: 100%; border-collapse: collapse; background: #1e1e1e; }
+        th { background: #333; color: #ffcc00; padding: 12px; text-align: left; text-transform: uppercase; font-size: 12px; }
+        td { padding: 10px; border-bottom: 1px solid #333; }
+        tr:hover { background: #252525; }
+        .utility-tag { color: #00ff00; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>Eden Database Oggetti</h1>
-    <input type="text" id="searchInput" placeholder="Cerca oggetto...">
+
+<div class="container">
+    <h1>EDEN GUILD PORTAL</h1>
     
+    <div class="search-box">
+        <input type="text" id="txtSearch" placeholder="Cerca oggetto (es. Clouded Moon)...">
+        <select id="selRealm">
+            <option value="">Tutti i Reami</option>
+            <option value="1">Albion</option>
+            <option value="2">Midgard</option>
+            <option value="3">Hibernia</option>
+        </select>
+    </div>
+
     <table id="itemTable">
         <thead>
             <tr>
-                <th onclick="sortTable(0)">Nome</th>
-                <th onclick="sortTable(1)">Reame</th>
-                <th onclick="sortTable(2)">Slot</th>
-                <th onclick="sortTable(3)">Utility</th>
+                <th>Nome</th>
+                <th>Slot</th>
+                <th>Livello</th>
+                <th>Utility</th>
             </tr>
         </thead>
-        <tbody id="tableBody"></tbody>
+        <tbody id="tableBody">
+            <tr><td colspan="4">Caricamento database in corso...</td></tr>
+        </tbody>
     </table>
+</div>
 
-    <script>
-        let items = [];
+<script src="item.js"></script>
+<script src="maps.js"></script>
 
-        // Carica i dati dal file JSON
-        fetch('data.json')
-            .then(res => res.json())
-            .then(data => {
-                items = data;
-                renderTable(items);
-            });
+<script>
+    let allItems = [];
 
-        function renderTable(data) {
-            const body = document.getElementById('tableBody');
-            body.innerHTML = data.map(item => `
-                <tr>
-                    <td>${item.name}</td>
-                    <td>${item.realm}</td>
-                    <td>${item.slot}</td>
-                    <td>${item.stats.utility}</td>
-                </tr>
-            `).join('');
-        }
+    // 3. Carichiamo il database Reale daoc.json
+    fetch('daoc.json')
+        .then(res => res.json())
+        .then(data => {
+            // Cerchiamo di capire dove sono gli oggetti nel JSON
+            allItems = data.objects || data.items || data;
+            console.log("Dati caricati:", allItems.length);
+            displayData(allItems);
+        })
+        .catch(err => {
+            document.getElementById('tableBody').innerHTML = "Errore caricamento daoc.json";
+        });
 
-        // Funzione di ricerca semplice
-        document.getElementById('searchInput').onkeyup = function() {
-            const val = this.value.toLowerCase();
-            const filtered = items.filter(i => i.name.toLowerCase().includes(val));
-            renderTable(filtered);
-        };
+    function displayData(items) {
+        const body = document.getElementById('tableBody');
+        // Mostriamo solo i primi 100 per non rallentare il browser
+        const limit = items.slice(0, 100);
+        
+        body.innerHTML = limit.map(item => `
+            <tr>
+                <td style="color: #4db8ff;">${item.name || 'Senza Nome'}</td>
+                <td>${item.slot || '-'}</td>
+                <td>${item.level || 'n/a'}</td>
+                <td class="utility-tag">${item.utility || 0}</td>
+            </tr>
+        `).join('');
+    }
 
-        // Funzione per ordinare (A-Z, Z-A o Numerico)
-        function sortTable(n) {
-            items.sort((a, b) => {
-                let valA = Object.values(a)[n+1]; // Semplificato per l'esempio
-                let valB = Object.values(b)[n+1];
-                return valA > valB ? 1 : -1;
-            });
-            renderTable(items);
-        }
-    </script>
+    // Filtro in tempo reale
+    document.getElementById('txtSearch').addEventListener('input', (e) => {
+        const val = e.target.value.toLowerCase();
+        const filtered = allItems.filter(i => i.name.toLowerCase().includes(val));
+        displayData(filtered);
+    });
+</script>
+
 </body>
 </html>
