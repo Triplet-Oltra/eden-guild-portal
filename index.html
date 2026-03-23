@@ -49,73 +49,60 @@
     </table>
 
     <script>
-        let allItems = [];
+    // Usiamo un nome unico per evitare conflitti con il browser
+    let gildaItems = []; 
 
-        // 1. CARICAMENTO DATI
-        fetch('itm/daoc.json')
-            .then(res => {
-                if (!res.ok) throw new Error("File non trovato in itm/daoc.json");
-                return res.json();
-            })
-            .then(data => {
-                // Estrazione intelligente degli oggetti
-                if (Array.isArray(data)) {
-                    allItems = data;
-                } else {
-                   allItems = Object.keys(data.classes).map(className => {
-    return {
-        name: className,
-        slot: "Classe",
-        utility: data.classes[className].realm === 1 ? "Albion" : "Altro",
-        mob_id: data.classes[className].id
-    };
-});
-                }
+    console.log("Tentativo di caricamento database...");
 
-                document.getElementById('statusMsg').innerHTML = `✅ Caricati ${allItems.length} oggetti.`;
-                document.getElementById('statusMsg').style.color = "#00ff00";
-                
-                renderTable(allItems.slice(0, 20)); // Mostra i primi 20 all'avvio
-            })
-            .catch(err => {
-                console.error(err);
-                document.getElementById('statusMsg').innerHTML = "❌ Errore: " + err.message;
-                document.getElementById('statusMsg').style.color = "red";
-            });
+    fetch('itm/daoc.json')
+        .then(response => {
+            if (!response.ok) throw new Error("File non trovato (404)");
+            return response.json();
+        })
+        .then(jsonDati => {
+            console.log("Dati scaricati con successo!");
 
-        // 2. FUNZIONE PER DISEGNARE LA TABELLA
-        function renderTable(list) {
-            const body = document.getElementById('tableBody');
-            if (list.length === 0) {
-                body.innerHTML = "<tr><td colspan='4'>Nessun risultato trovato.</td></tr>";
-                return;
+            // Trasformiamo il tuo JSON delle classi in una lista leggibile
+            if (jsonDati.classes) {
+                gildaItems = Object.keys(jsonDati.classes).map(nomeClasse => {
+                    return {
+                        nome: nomeClasse,
+                        tipo: "Classe",
+                        info: "Realm ID: " + jsonDati.classes[nomeClasse].realm
+                    };
+                });
+            } else {
+                gildaItems = Array.isArray(jsonDati) ? jsonDati : [];
             }
 
-            body.innerHTML = list.map(item => {
-                const name = item.name || item.Name || "Sconosciuto";
-                const slot = item.slot || item.Slot || "-";
-                const utility = item.utility || item.Utility || 0;
-                const mobId = item.mob_id || item.mob_id || null;
+            document.getElementById('statusMsg').innerHTML = "✅ Connesso! " + gildaItems.length + " voci pronte.";
+            renderGildaTable(gildaItems.slice(0, 20));
+        })
+        .catch(errore => {
+            console.error("Dettaglio errore:", errore);
+            document.getElementById('statusMsg').innerHTML = "❌ Errore: " + errore.message;
+        });
 
-                return `
-                    <tr>
-                        <td style="color: #4db8ff; font-weight:bold;">${name}</td>
-                        <td>${slot}</td>
-                        <td>${utility}</td>
-                        <td>
-                            ${mobId ? `<button class="btn-map" onclick="alert('Coordinate Boss ID: ${mobId}')">📍 MAPPA</button>` : '-'}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
+    function renderGildaTable(lista) {
+        const corpoTabella = document.getElementById('tableBody');
+        if (!corpoTabella) return;
 
-        // 3. FUNZIONE DI RICERCA
-        function updateDisplay() {
-            const query = document.getElementById('txtSearch').value.toLowerCase().trim();
-            const realm = document.getElementById('selRealm').value;
-       
-            const filtered = allItems.filter(item => {
-                const itemName = (item.name || item.Name || "").toLowerCase
-     </script>
+        corpoTabella.innerHTML = lista.map(item => `
+            <tr>
+                <td style="color:#4db8ff; font-weight:bold;">${item.nome || item.name || '???'}</td>
+                <td>${item.tipo || item.slot || '-'}</td>
+                <td>${item.info || item.utility || '-'}</td>
+            </tr>
+        `).join('');
+    }
+
+    // Funzione di ricerca collegata all'input
+    document.getElementById('txtSearch').addEventListener('input', (e) => {
+        const testo = e.target.value.toLowerCase();
+        const filtrati = gildaItems.filter(i => 
+            (i.nome || "").toLowerCase().includes(testo)
+        );
+        renderGildaTable(filtrati.slice(0, 50));
+    });
+</script>
 </body> </html>
