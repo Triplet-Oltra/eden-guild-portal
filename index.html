@@ -3,198 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eden Guild Portal | Utility & Maps</title>
-    
+    <title>Eden DAoC - Database Gilda</title>
     <link rel="stylesheet" href="itm/items.css">
-<script src="itm/item.js"></script>
-<script src="itm/maps.js"></script>
-    
+    <script src="itm/item.js"></script>
+    <script src="itm/maps.js"></script>
     <style>
-        body
-        <div style="background: #222; border: 2px solid #ffcc00; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 0 15px rgba(255, 204, 0, 0.2);">
-    <h2 style="margin-top: 0; color: #ffcc00; font-size: 1.2em; display: flex; align-items: center;">
-        🛡️ BACHECA GILDA: <span style="color: #00ff00; margin-left: 10px; font-size: 0.8em;">● ONLINE</span>
-    </h2>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-        <div style="border-right: 1px solid #444; padding-right: 10px;">
-            <strong style="color: #4db8ff;">⚔️ PROSSIMO RAID:</strong><br>
-            <span style="font-size: 0.9em;">Raid Drago - Venerdì ore 21:15 (Ritrovo a Camelot)</span>
-        </div>
-        <div>
-            <strong style="color: #ff4d4d;">📢 RECLUTAMENTO:</strong><br>
-            <span style="font-size: 0.9em;">Cerchiamo 1 Bardo e 1 Druido per Gruppo Fisso</span>
-        </div>
-    </div>
-</div>
-        { background: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
-        .container { max-width: 1200px; margin: auto; }
-        
-        h1 { color: #ffcc00; text-shadow: 2px 2px #000; border-bottom: 2px solid #333; }
-
-        .search-box { 
-            margin-bottom: 20px; 
-            background: #1e1e1e; 
-            padding: 20px; 
-            border-radius: 8px; 
-            display: flex; 
-            gap: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-
-        input, select { 
-            padding: 12px; 
-            background: #2a2a2a; 
-            border: 1px solid #444; 
-            color: white; 
-            border-radius: 4px; 
-            flex-grow: 1; 
-        }
-
-        table { width: 100%; border-collapse: collapse; background: #1e1e1e; margin-top: 10px; }
-        th { background: #333; color: #ffcc00; padding: 15px; text-align: left; text-transform: uppercase; font-size: 13px; border-bottom: 2px solid #444; }
-        td { padding: 12px; border-bottom: 1px solid #333; font-size: 14px; }
-        tr:hover { background: #252525; }
-
-        .utility-high { color: #00ff00; font-weight: bold; text-shadow: 0 0 5px #00ff00; }
-        
-        .btn-map { 
-            background: #cc9900; 
-            color: black; 
-            border: none; 
-            padding: 6px 12px; 
-            border-radius: 4px; 
-            cursor: pointer; 
-            font-weight: bold;
-            font-size: 11px;
-        }
-        .btn-map:hover { background: #ffcc00; }
-        .no-map { color: #555; font-style: italic; }
+        body { background: #1a1a1a; color: white; font-family: sans-serif; padding: 20px; }
+        .search-box { background: #2a2a2a; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #444; }
+        input, select { padding: 10px; border-radius: 4px; border: 1px solid #555; background: #333; color: white; margin-right: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #333; text-align: left; padding: 12px; border-bottom: 2px solid #444; }
+        td { padding: 12px; border-bottom: 1px solid #333; }
+        .btn-map { background: #ffcc00; color: black; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-weight: bold; }
+        .btn-map:hover { background: #e6b800; }
+        .loading { color: #ffcc00; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>EDEN GUILD PORTAL</h1>
-    
+    <h2>🛡️ Database Oggetti Eden</h2>
+
     <div class="search-box">
-        <input type="text" id="txtSearch" placeholder="Cerca oggetto o boss...">
+        <input type="text" id="txtSearch" placeholder="Cerca oggetto o boss..." style="width: 300px;">
         <select id="selRealm">
             <option value="">Tutti i Reami</option>
             <option value="1">Albion</option>
             <option value="2">Midgard</option>
             <option value="3">Hibernia</option>
         </select>
+        <button onclick="updateDisplay()" style="padding: 10px 20px; cursor:pointer;">CERCA</button>
+        <p id="statusMsg" class="loading">Tentativo di caricamento daoc.json...</p>
     </div>
 
-    <table id="itemTable">
+    <table>
         <thead>
             <tr>
                 <th>Nome Oggetto</th>
                 <th>Slot</th>
                 <th>Utility</th>
-                <th>Localizzazione Boss</th>
+                <th>Mappa</th>
             </tr>
         </thead>
         <tbody id="tableBody">
-            <tr><td colspan="4">In attesa dei dati daoc.json...</td></tr>
-        </tbody>
+            </tbody>
     </table>
-</div>
 
-<script src="itm/item.js"></script>
-<script src="itm/maps.js"></script>
+    <script>
+        let allItems = [];
 
-<script>
-    let allItems = [];
+        // 1. CARICAMENTO DATI
+        fetch('itm/daoc.json')
+            .then(res => {
+                if (!res.ok) throw new Error("File non trovato in itm/daoc.json");
+                return res.json();
+            })
+            .then(data => {
+                // Estrazione intelligente degli oggetti
+                if (Array.isArray(data)) {
+                    allItems = data;
+                } else {
+                    allItems = data.objects || data.items || Object.values(data);
+                }
 
-    // 1. CARICAMENTO DATABASE (Percorso aggiornato a itm/)
-    console.log("Tentativo di caricamento daoc.json...");
-    
-    fetch('itm/daoc.json')
-        .then(res => {
-            if (!res.ok) throw new Error("File non trovato in itm/daoc.json (Errore 404)");
-            return res.json();
-        })
-        .then(data => {
-            // Cerchiamo di capire dove sono gli oggetti nel tuo JSON
-            // Alcuni JSON di Eden sono dentro 'objects', altri sono una lista diretta []
-            allItems = data.objects || data.items || data;
-            
-            if (!Array.isArray(allItems)) {
-                // Se il JSON è strano, proviamo a convertirlo in array
-                allItems = Object.values(data);
+                document.getElementById('statusMsg').innerHTML = `✅ Caricati ${allItems.length} oggetti.`;
+                document.getElementById('statusMsg').style.color = "#00ff00";
+                
+                renderTable(allItems.slice(0, 20)); // Mostra i primi 20 all'avvio
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('statusMsg').innerHTML = "❌ Errore: " + err.message;
+                document.getElementById('statusMsg').style.color = "red";
+            });
+
+        // 2. FUNZIONE PER DISEGNARE LA TABELLA
+        function renderTable(list) {
+            const body = document.getElementById('tableBody');
+            if (list.length === 0) {
+                body.innerHTML = "<tr><td colspan='4'>Nessun risultato trovato.</td></tr>";
+                return;
             }
 
-            console.log("Successo! Caricati " + allItems.length + " oggetti.");
-            
-            // Mostriamo i primi 20 oggetti appena apre il sito per conferma
-            renderTable(allItems.slice(0, 20));
-        })
-        .catch(err => {
-            console.error("ERRORE CRITICO:", err);
-            document.getElementById('tableBody').innerHTML = 
-                "<tr style='color:red'><td colspan='4'>ERRORE: " + err.message + 
-                "<br>Verifica che il file sia in: <b>tuorepo/itm/daoc.json</b></td></tr>";
-        });
+            body.innerHTML = list.map(item => {
+                const name = item.name || item.Name || "Sconosciuto";
+                const slot = item.slot || item.Slot || "-";
+                const utility = item.utility || item.Utility || 0;
+                const mobId = item.mob_id || item.mob_id || null;
 
-    // 2. FUNZIONE DI RICERCA (Migliorata)
-    function updateDisplay() {
-        const query = document.getElementById('txtSearch').value.toLowerCase().trim();
-        const realm = document.getElementById('selRealm').value;
-
-        console.log("Ricerca in corso per:", query);
-
-        if (query.length < 2 && realm === "") {
-            // Se non scrive nulla, mostra i primi 20
-            renderTable(allItems.slice(0, 20));
-            return;
+                return `
+                    <tr>
+                        <td style="color: #4db8ff; font-weight:bold;">${name}</td>
+                        <td>${slot}</td>
+                        <td>${utility}</td>
+                        <td>
+                            ${mobId ? `<button class="btn-map" onclick="alert('Coordinate Boss ID: ${mobId}')">📍 MAPPA</button>` : '-'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
-        const filtered = allItems.filter(item => {
-            // Gestiamo il fatto che nel JSON il nome potrebbe essere 'Name' o 'name'
-            const itemName = (item.name || item.Name || "").toLowerCase();
-            const itemRealm = item.realm || item.Realm || "";
-            
-            const matchName = itemName.includes(query);
-            const matchRealm = realm === "" || itemRealm == realm;
-            
-            return matchName && matchRealm;
-        });
+        // 3. FUNZIONE DI RICERCA
+        function updateDisplay() {
+            const query = document.getElementById('txtSearch').value.toLowerCase().trim();
+            const realm = document.getElementById('selRealm').value;
 
-        console.log("Trovati:", filtered.length);
-        renderTable(filtered);
-    }
-
-    // 3. FUNZIONE DI DISEGNO TABELLA
-    function renderTable(list) {
-        const body = document.getElementById('tableBody');
-        
-        if (list.length === 0) {
-            body.innerHTML = "<tr><td colspan='4'>Nessun oggetto trovato. Controlla le maiuscole!</td></tr>";
-            return;
-        }
-
-        body.innerHTML = list.slice(0, 100).map(item => {
-            // Adattiamo i nomi delle colonne a quelli tipici di Eden
-            const name = item.name || item.Name || "Senza Nome";
-            const slot = item.slot || item.Slot || "-";
-            const utility = item.utility || item.Utility || 0;
-            const mobId = item.mob_id || item.mob_id || null;
-
-            return `
-                <tr>
-                    <td style="color: #4db8ff; font-weight:bold;">${name}</td>
-                    <td>${slot}</td>
-                    <td style="color:${utility > 50 ? '#00ff00' : '#ccc'}">${utility}</td>
-                    <td>
-                        ${mobId ? `<button class="btn-map" onclick="alert('Coordinate Boss ID: ${mobId}')">📍 MAPPA</button>` : '-'}
-                    </td>
-                </tr>
-            `;
-        }).join('');
-    }
-
-    // Eventi per far funzionare la ricerca mentre scrivi
-    document.getElementById('txtSearch').addEventListener('input', updateDisplay);
-    document.getElementById('selRealm').addEventListener('change', updateDisplay);
-</script>
+            const filtered = allItems.filter(item => {
+                const itemName = (item.name || item.Name || "").toLowerCase
