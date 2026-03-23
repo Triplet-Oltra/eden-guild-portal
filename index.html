@@ -105,19 +105,19 @@
 <script>
     let allItems = [];
 
-    // Carichiamo il database
-    fetch('daoc.json')
-        .then(res => res.json())
-        .then(data => {
-            // Cerchiamo l'array degli oggetti nel JSON
-            allItems = data.objects || data.items || data;
-            console.log("Database caricato con successo.");
-            updateDisplay();
-        })
-        .catch(err => {
-            console.error(err);
-            document.getElementById('tableBody').innerHTML = "Errore: Assicurati che daoc.json sia nella radice del repository.";
-        });
+   // Aggiungiamo 'itm/' davanti al nome del file
+fetch('itm/daoc.json') 
+    .then(res => res.json())
+    .then(data => {
+        // Il resto rimane uguale
+        allItems = data.objects || data.items || data;
+        console.log("Database caricato correttamente dalla cartella itm!");
+        updateDisplay();
+    })
+    .catch(err => {
+        console.error("Errore:", err);
+        document.getElementById('tableBody').innerHTML = "Errore: Non trovo il file in itm/daoc.json";
+    });
 
     function updateDisplay() {
         const query = document.getElementById('txtSearch').value.toLowerCase();
