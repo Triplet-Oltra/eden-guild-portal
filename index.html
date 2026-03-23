@@ -1,24 +1,61 @@
+Ecco il codice completo per il tuo index.html. Ho integrato la colonna Mappa e la logica per collegare gli oggetti ai dati di maps.js.
+
+Ho aggiunto anche un piccolo trucco Hardcore: se l'oggetto ha un valore di Utility alto (sopra 50), la cella si colora di verde neon per saltare subito all'occhio dei tuoi compagni durante il template.
+
+HTML
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eden Guild Portal | Utility & Hardcore</title>
+    <title>Eden Guild Portal | Utility & Maps</title>
     
     <link rel="stylesheet" href="items.css">
     
     <style>
-        /* Ritocchi per rendere il sito moderno e scuro */
-        body { background: #121212; color: #e0e0e0; font-family: sans-serif; padding: 20px; }
-        .container { max-width: 1100px; margin: auto; }
-        .search-box { margin-bottom: 20px; background: #1e1e1e; padding: 15px; border-radius: 8px; display: flex; gap: 10px; }
-        input, select { padding: 10px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 4px; flex-grow: 1; }
+        body { background: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
+        .container { max-width: 1200px; margin: auto; }
         
-        table { width: 100%; border-collapse: collapse; background: #1e1e1e; }
-        th { background: #333; color: #ffcc00; padding: 12px; text-align: left; text-transform: uppercase; font-size: 12px; }
-        td { padding: 10px; border-bottom: 1px solid #333; }
+        h1 { color: #ffcc00; text-shadow: 2px 2px #000; border-bottom: 2px solid #333; }
+
+        .search-box { 
+            margin-bottom: 20px; 
+            background: #1e1e1e; 
+            padding: 20px; 
+            border-radius: 8px; 
+            display: flex; 
+            gap: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        input, select { 
+            padding: 12px; 
+            background: #2a2a2a; 
+            border: 1px solid #444; 
+            color: white; 
+            border-radius: 4px; 
+            flex-grow: 1; 
+        }
+
+        table { width: 100%; border-collapse: collapse; background: #1e1e1e; margin-top: 10px; }
+        th { background: #333; color: #ffcc00; padding: 15px; text-align: left; text-transform: uppercase; font-size: 13px; border-bottom: 2px solid #444; }
+        td { padding: 12px; border-bottom: 1px solid #333; font-size: 14px; }
         tr:hover { background: #252525; }
-        .utility-tag { color: #00ff00; font-weight: bold; }
+
+        .utility-high { color: #00ff00; font-weight: bold; text-shadow: 0 0 5px #00ff00; }
+        
+        .btn-map { 
+            background: #cc9900; 
+            color: black; 
+            border: none; 
+            padding: 6px 12px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-weight: bold;
+            font-size: 11px;
+        }
+        .btn-map:hover { background: #ffcc00; }
+        .no-map { color: #555; font-style: italic; }
     </style>
 </head>
 <body>
@@ -27,7 +64,7 @@
     <h1>EDEN GUILD PORTAL</h1>
     
     <div class="search-box">
-        <input type="text" id="txtSearch" placeholder="Cerca oggetto (es. Clouded Moon)...">
+        <input type="text" id="txtSearch" placeholder="Cerca oggetto o boss...">
         <select id="selRealm">
             <option value="">Tutti i Reami</option>
             <option value="1">Albion</option>
@@ -39,14 +76,14 @@
     <table id="itemTable">
         <thead>
             <tr>
-                <th>Nome</th>
+                <th>Nome Oggetto</th>
                 <th>Slot</th>
-                <th>Livello</th>
                 <th>Utility</th>
+                <th>Localizzazione Boss</th>
             </tr>
         </thead>
         <tbody id="tableBody">
-            <tr><td colspan="4">Caricamento database in corso...</td></tr>
+            <tr><td colspan="4">In attesa dei dati daoc.json...</td></tr>
         </tbody>
     </table>
 </div>
@@ -57,40 +94,76 @@
 <script>
     let allItems = [];
 
-    // 3. Carichiamo il database Reale daoc.json
+    // Carichiamo il database
     fetch('daoc.json')
         .then(res => res.json())
         .then(data => {
-            // Cerchiamo di capire dove sono gli oggetti nel JSON
+            // Cerchiamo l'array degli oggetti nel JSON
             allItems = data.objects || data.items || data;
-            console.log("Dati caricati:", allItems.length);
-            displayData(allItems);
+            console.log("Database caricato con successo.");
+            updateDisplay();
         })
         .catch(err => {
-            document.getElementById('tableBody').innerHTML = "Errore caricamento daoc.json";
+            console.error(err);
+            document.getElementById('tableBody').innerHTML = "Errore: Assicurati che daoc.json sia nella radice del repository.";
         });
 
-    function displayData(items) {
-        const body = document.getElementById('tableBody');
-        // Mostriamo solo i primi 100 per non rallentare il browser
-        const limit = items.slice(0, 100);
-        
-        body.innerHTML = limit.map(item => `
-            <tr>
-                <td style="color: #4db8ff;">${item.name || 'Senza Nome'}</td>
-                <td>${item.slot || '-'}</td>
-                <td>${item.level || 'n/a'}</td>
-                <td class="utility-tag">${item.utility || 0}</td>
-            </tr>
-        `).join('');
+    function updateDisplay() {
+        const query = document.getElementById('txtSearch').value.toLowerCase();
+        const realm = document.getElementById('selRealm').value;
+
+        const filtered = allItems.filter(i => {
+            const matchName = i.name?.toLowerCase().includes(query);
+            const matchRealm = realm === "" || i.realm == realm;
+            return matchName && matchRealm;
+        });
+
+        renderTable(filtered);
     }
 
-    // Filtro in tempo reale
-    document.getElementById('txtSearch').addEventListener('input', (e) => {
-        const val = e.target.value.toLowerCase();
-        const filtered = allItems.filter(i => i.name.toLowerCase().includes(val));
-        displayData(filtered);
-    });
+    function renderTable(list) {
+        const body = document.getElementById('tableBody');
+        const limit = list.slice(0, 100); // Ottimizzazione performance
+        
+        body.innerHTML = limit.map(item => {
+            // Logica Mappa: controlliamo se l'item ha un riferimento a un boss o zona
+            const locationId = item.mob_id || item.zone_id || null;
+            const utilityValue = parseFloat(item.utility) || 0;
+            
+            const mapCell = locationId 
+                ? `<button class="btn-map" onclick="findLocation(${locationId}, '${item.name.replace(/'/g, "\\'")}')">📍 MAPPA</button>` 
+                : `<span class="no-map">N/A</span>`;
+
+            return `
+                <tr>
+                    <td style="color: #4db8ff; font-weight:bold;">${item.name}</td>
+                    <td>${item.slot || '-'}</td>
+                    <td class="${utilityValue > 50 ? 'utility-high' : ''}">${utilityValue}</td>
+                    <td>${mapCell}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // Funzione per incrociare i dati con maps.js
+    function findLocation(id, itemName) {
+        // Cerchiamo nelle variabili caricate da maps.js (solitamente si chiamano 'maps' o 'zones')
+        // Adattiamo la ricerca in base a come è strutturato il tuo maps.js
+        if (typeof maps !== 'undefined') {
+            const loc = maps.find(m => m.id === id || m.mob_id === id);
+            if (loc) {
+                alert(`INFO DROPPATO DA: ${loc.mob_name || 'Boss'}\nZONA: ${loc.zone_name}\nCOORDINATE: X: ${loc.x}, Y: ${loc.y}`);
+            } else {
+                alert(`Dati mappa non trovati per l'ID ${id}. Controlla il file maps.js.`);
+            }
+        } else {
+            alert("Il file maps.js è stato caricato ma la variabile 'maps' non è definita.");
+        }
+    }
+
+    // Eventi filtri
+    document.getElementById('txtSearch').addEventListener('input', updateDisplay);
+    document.getElementById('selRealm').addEventListener('change', updateDisplay);
 </script>
 
 </body>
