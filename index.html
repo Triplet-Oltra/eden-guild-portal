@@ -62,7 +62,14 @@
                 if (Array.isArray(data)) {
                     allItems = data;
                 } else {
-                    allItems = data.objects || data.items || Object.values(data);
+                   allItems = Object.keys(data.classes).map(className => {
+    return {
+        name: className,
+        slot: "Classe",
+        utility: data.classes[className].realm === 1 ? "Albion" : "Altro",
+        mob_id: data.classes[className].id
+    };
+});
                 }
 
                 document.getElementById('statusMsg').innerHTML = `✅ Caricati ${allItems.length} oggetti.`;
