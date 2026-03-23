@@ -1,1 +1,72 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Eden Guild Portal - Utility</title>
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: #eee; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #444; padding: 10px; text-align: left; }
+        th { cursor: pointer; background: #333; }
+        th:hover { background: #555; }
+        input { padding: 8px; width: 300px; background: #222; color: #fff; border: 1px solid #555; }
+    </style>
+</head>
+<body>
+    <h1>Eden Database Oggetti</h1>
+    <input type="text" id="searchInput" placeholder="Cerca oggetto...">
+    
+    <table id="itemTable">
+        <thead>
+            <tr>
+                <th onclick="sortTable(0)">Nome</th>
+                <th onclick="sortTable(1)">Reame</th>
+                <th onclick="sortTable(2)">Slot</th>
+                <th onclick="sortTable(3)">Utility</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
 
+    <script>
+        let items = [];
+
+        // Carica i dati dal file JSON
+        fetch('data.json')
+            .then(res => res.json())
+            .then(data => {
+                items = data;
+                renderTable(items);
+            });
+
+        function renderTable(data) {
+            const body = document.getElementById('tableBody');
+            body.innerHTML = data.map(item => `
+                <tr>
+                    <td>${item.name}</td>
+                    <td>${item.realm}</td>
+                    <td>${item.slot}</td>
+                    <td>${item.stats.utility}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Funzione di ricerca semplice
+        document.getElementById('searchInput').onkeyup = function() {
+            const val = this.value.toLowerCase();
+            const filtered = items.filter(i => i.name.toLowerCase().includes(val));
+            renderTable(filtered);
+        };
+
+        // Funzione per ordinare (A-Z, Z-A o Numerico)
+        function sortTable(n) {
+            items.sort((a, b) => {
+                let valA = Object.values(a)[n+1]; // Semplificato per l'esempio
+                let valB = Object.values(b)[n+1];
+                return valA > valB ? 1 : -1;
+            });
+            renderTable(items);
+        }
+    </script>
+</body>
+</html>
