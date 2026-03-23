@@ -48,55 +48,75 @@
             </tbody>
     </table>
 
-    <script>
+   <script>
     let allItems = [];
+    let metadata = {};
+    let timeout = null;
 
-    // Carichiamo i file dalla root (stessa cartella di index.html)
-Promise.all([
-    fetch('daoc_item_metadata.json').then(res => res.json()),
-    fetch('static_objects.json').then(res => res.json())
-])
-.then(([metaData, itemData]) => {
-    metadata = metaData;
-    // Carichiamo i 52MB di dati
-    allItems = Array.isArray(itemData) ? itemData : (itemData.items || []);
-    
-    document.getElementById('statusMsg').innerHTML = `✅ Database Online: ${allItems.length} oggetti.`;
-    document.getElementById('statusMsg').style.color = "#00ff00";
-})
-.catch(err => {
-    console.error("Errore:", err);
-    document.getElementById('statusMsg').innerHTML = "❌ Errore: Controlla che i nomi dei file siano corretti.";
-});
+    // Caricamento dei file
+    Promise.all([
+        fetch('daoc_item_metadata.json').then(res => res.json()),
+        fetch('static_objects.json').then(res => res.json())
+    ])
+    .then(([metaData, itemData]) => {
+        metadata = metaData;
+        // Estrazione dati flessibile
+        allItems = Array.isArray(itemData) ? itemData : (itemData.items || Object.values(itemData).filter(i => typeof i === 'object'));
+        
+        const status = document.getElementById('statusMsg');
+        status.innerHTML = `✅ Database Pronto: <strong>${allItems.length}</strong> oggetti caricati.`;
+        status.style.color = "#00ff00";
+    })
+    .catch(err => {
+        document.getElementById('statusMsg').innerHTML = "❌ Errore caricamento file JSON.";
+    });
 
     function renderTable(list) {
         const body = document.getElementById('tableBody');
+        if (list.length === 0) {
+            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">Nessun oggetto trovato.</td></tr>';
+            return;
+        }
+
         body.innerHTML = list.map(item => {
-            // Estraiamo chi lo droppa (se presente)
-            const droppatoDa = item.sources?.monsters?.one_time_drop ? 
-                               item.sources.monsters.one_time_drop.join(', ') : "Sconosciuto";
+            // Pulizia del testo delve (rimuove i ritorni a capo brutti)
+            const descrizione = item.delve_text ? item.delve_text.replace(/\n/g, '<br>') : 'Nessun dettaglio disponibile';
+            const drop = item.sources?.monsters?.one_time_drop ? `<br><small style="color:#00ff00">Drop: ${item.sources.monsters.one_time_drop.join(', ')}</small>` : '';
 
             return `
-                <tr>
-                    <td style="color:#4db8ff; font-weight:bold;">${item.name}</td>
-                    <td>Slot ID: ${item.slot}</td>
-                    <td style="font-size: 0.85em; color: #aaa;">
-                        ${item.delve_text ? item.delve_text.replace(/\n/g, '<br>') : 'Nessun dettaglio'}
+                <tr style="border-bottom: 1px solid #333; background: rgba(255,255,255,0.02);">
+                    <td style="color:#4db8ff; font-weight:bold; padding:12px; width:30%;">
+                        ${item.name}
+                        ${drop}
                     </td>
-                    <td style="color: #00ff00;">${droppatoDa}</td>
+                    <td style="font-size: 0.9em; color: #bbb; padding:12px; line-height:1.4;">
+                        ${descrizione}
+                    </td>
+                    <td style="color: #ffa500; font-weight:bold; text-align:center; width:10%;">
+                        Lvl ${item.level || item.bonus_level || '-'}
+                    </td>
                 </tr>
             `;
         }).join('');
     }
 
     function updateDisplay() {
+        clearTimeout(timeout);
         const query = document.getElementById('txtSearch').value.toLowerCase().trim();
-        if (query.length < 2) return; // Evitiamo ricerche troppo brevi
+        
+        if (query.length < 3) {
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">Scrivi almeno 3 lettere per cercare...</td></tr>';
+            return;
+        }
 
-        const filtered = allItems.filter(i => 
-            (i.name || "").toLowerCase().includes(query)
-        );
-        renderTable(filtered.slice(0, 50));
+        // Aspetta che l'utente finisca di scrivere per non bloccare il browser
+        timeout = setTimeout(() => {
+            const filtered = allItems.filter(i => 
+                (i.name || "").toLowerCase().includes(query) || 
+                (i.delve_text || "").toLowerCase().includes(query)
+            );
+            renderTable(filtered.slice(0, 50)); // Mostra i primi 50 risultati
+        }, 300);
     }
 
     document.getElementById('txtSearch').addEventListener('input', updateDisplay);
