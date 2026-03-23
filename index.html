@@ -51,19 +51,23 @@
     <script>
     let allItems = [];
 
-    // Funzione per caricare il file
-    fetch('itm/daoc.json')
-        .then(res => res.json())
-        .then(data => {
-            // Se il file è una lista (come sembra dall'esempio), lo carichiamo
-            allItems = Array.isArray(data) ? data : (data.items || []);
-            
-            document.getElementById('statusMsg').innerHTML = `✅ ${allItems.length} Oggetti Caricati!`;
-            renderTable(allItems.slice(0, 30)); 
-        })
-        .catch(err => {
-            document.getElementById('statusMsg').innerHTML = "❌ Errore caricamento database.";
-        });
+    // Carichiamo i file dalla root (stessa cartella di index.html)
+Promise.all([
+    fetch('daoc_item_metadata.json').then(res => res.json()),
+    fetch('static_objects.json').then(res => res.json())
+])
+.then(([metaData, itemData]) => {
+    metadata = metaData;
+    // Carichiamo i 52MB di dati
+    allItems = Array.isArray(itemData) ? itemData : (itemData.items || []);
+    
+    document.getElementById('statusMsg').innerHTML = `✅ Database Online: ${allItems.length} oggetti.`;
+    document.getElementById('statusMsg').style.color = "#00ff00";
+})
+.catch(err => {
+    console.error("Errore:", err);
+    document.getElementById('statusMsg').innerHTML = "❌ Errore: Controlla che i nomi dei file siano corretti.";
+});
 
     function renderTable(list) {
         const body = document.getElementById('tableBody');
