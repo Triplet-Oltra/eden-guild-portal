@@ -107,77 +107,94 @@
 <script>
     let allItems = [];
 
-   // Aggiungiamo 'itm/' davanti al nome del file
-fetch('itm/daoc.json') 
-    .then(res => res.json())
-    .then(data => {
-        // Il resto rimane uguale
-        allItems = data.objects || data.items || data;
-        console.log("Database caricato correttamente dalla cartella itm!");
-        updateDisplay();
-    })
-    .catch(err => {
-        console.error("Errore:", err);
-        document.getElementById('tableBody').innerHTML = "Errore: Non trovo il file in itm/daoc.json";
-    });
+    // 1. CARICAMENTO DATABASE (Percorso aggiornato a itm/)
+    console.log("Tentativo di caricamento daoc.json...");
+    
+    fetch('itm/daoc.json')
+        .then(res => {
+            if (!res.ok) throw new Error("File non trovato in itm/daoc.json (Errore 404)");
+            return res.json();
+        })
+        .then(data => {
+            // Cerchiamo di capire dove sono gli oggetti nel tuo JSON
+            // Alcuni JSON di Eden sono dentro 'objects', altri sono una lista diretta []
+            allItems = data.objects || data.items || data;
+            
+            if (!Array.isArray(allItems)) {
+                // Se il JSON è strano, proviamo a convertirlo in array
+                allItems = Object.values(data);
+            }
 
+            console.log("Successo! Caricati " + allItems.length + " oggetti.");
+            
+            // Mostriamo i primi 20 oggetti appena apre il sito per conferma
+            renderTable(allItems.slice(0, 20));
+        })
+        .catch(err => {
+            console.error("ERRORE CRITICO:", err);
+            document.getElementById('tableBody').innerHTML = 
+                "<tr style='color:red'><td colspan='4'>ERRORE: " + err.message + 
+                "<br>Verifica che il file sia in: <b>tuorepo/itm/daoc.json</b></td></tr>";
+        });
+
+    // 2. FUNZIONE DI RICERCA (Migliorata)
     function updateDisplay() {
-        const query = document.getElementById('txtSearch').value.toLowerCase();
+        const query = document.getElementById('txtSearch').value.toLowerCase().trim();
         const realm = document.getElementById('selRealm').value;
 
-        const filtered = allItems.filter(i => {
-            const matchName = i.name?.toLowerCase().includes(query);
-            const matchRealm = realm === "" || i.realm == realm;
+        console.log("Ricerca in corso per:", query);
+
+        if (query.length < 2 && realm === "") {
+            // Se non scrive nulla, mostra i primi 20
+            renderTable(allItems.slice(0, 20));
+            return;
+        }
+
+        const filtered = allItems.filter(item => {
+            // Gestiamo il fatto che nel JSON il nome potrebbe essere 'Name' o 'name'
+            const itemName = (item.name || item.Name || "").toLowerCase();
+            const itemRealm = item.realm || item.Realm || "";
+            
+            const matchName = itemName.includes(query);
+            const matchRealm = realm === "" || itemRealm == realm;
+            
             return matchName && matchRealm;
         });
 
+        console.log("Trovati:", filtered.length);
         renderTable(filtered);
     }
 
+    // 3. FUNZIONE DI DISEGNO TABELLA
     function renderTable(list) {
         const body = document.getElementById('tableBody');
-        const limit = list.slice(0, 100); // Ottimizzazione performance
         
-        body.innerHTML = limit.map(item => {
-            // Logica Mappa: controlliamo se l'item ha un riferimento a un boss o zona
-            const locationId = item.mob_id || item.zone_id || null;
-            const utilityValue = parseFloat(item.utility) || 0;
-            
-            const mapCell = locationId 
-                ? `<button class="btn-map" onclick="findLocation(${locationId}, '${item.name.replace(/'/g, "\\'")}')">📍 MAPPA</button>` 
-                : `<span class="no-map">N/A</span>`;
+        if (list.length === 0) {
+            body.innerHTML = "<tr><td colspan='4'>Nessun oggetto trovato. Controlla le maiuscole!</td></tr>";
+            return;
+        }
+
+        body.innerHTML = list.slice(0, 100).map(item => {
+            // Adattiamo i nomi delle colonne a quelli tipici di Eden
+            const name = item.name || item.Name || "Senza Nome";
+            const slot = item.slot || item.Slot || "-";
+            const utility = item.utility || item.Utility || 0;
+            const mobId = item.mob_id || item.mob_id || null;
 
             return `
                 <tr>
-                    <td style="color: #4db8ff; font-weight:bold;">${item.name}</td>
-                    <td>${item.slot || '-'}</td>
-                    <td class="${utilityValue > 50 ? 'utility-high' : ''}">${utilityValue}</td>
-                    <td>${mapCell}</td>
+                    <td style="color: #4db8ff; font-weight:bold;">${name}</td>
+                    <td>${slot}</td>
+                    <td style="color:${utility > 50 ? '#00ff00' : '#ccc'}">${utility}</td>
+                    <td>
+                        ${mobId ? `<button class="btn-map" onclick="alert('Coordinate Boss ID: ${mobId}')">📍 MAPPA</button>` : '-'}
+                    </td>
                 </tr>
             `;
         }).join('');
     }
 
-    // Funzione per incrociare i dati con maps.js
-    function findLocation(id, itemName) {
-        // Cerchiamo nelle variabili caricate da maps.js (solitamente si chiamano 'maps' o 'zones')
-        // Adattiamo la ricerca in base a come è strutturato il tuo maps.js
-        if (typeof maps !== 'undefined') {
-            const loc = maps.find(m => m.id === id || m.mob_id === id);
-            if (loc) {
-                alert(`INFO DROPPATO DA: ${loc.mob_name || 'Boss'}\nZONA: ${loc.zone_name}\nCOORDINATE: X: ${loc.x}, Y: ${loc.y}`);
-            } else {
-                alert(`Dati mappa non trovati per l'ID ${id}. Controlla il file maps.js.`);
-            }
-        } else {
-            alert("Il file maps.js è stato caricato ma la variabile 'maps' non è definita.");
-        }
-    }
-
-    // Eventi filtri
+    // Eventi per far funzionare la ricerca mentre scrivi
     document.getElementById('txtSearch').addEventListener('input', updateDisplay);
     document.getElementById('selRealm').addEventListener('change', updateDisplay);
 </script>
-
-</body>
-</html>
