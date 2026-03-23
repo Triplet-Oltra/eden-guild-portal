@@ -48,7 +48,7 @@
             </tbody>
     </table>
 
-   <script>
+  <script>
     let allItems = [];
     let metadata = {};
     let timeout = null;
@@ -60,40 +60,44 @@
     ])
     .then(([metaData, itemData]) => {
         metadata = metaData;
-        // Estrazione dati flessibile
         allItems = Array.isArray(itemData) ? itemData : (itemData.items || Object.values(itemData).filter(i => typeof i === 'object'));
         
-        const status = document.getElementById('statusMsg');
-        status.innerHTML = `✅ Database Pronto: <strong>${allItems.length}</strong> oggetti caricati.`;
-        status.style.color = "#00ff00";
+        document.getElementById('statusMsg').innerHTML = `✅ Database Online: <strong>${allItems.length}</strong> oggetti.`;
     })
     .catch(err => {
-        document.getElementById('statusMsg').innerHTML = "❌ Errore caricamento file JSON.";
+        document.getElementById('statusMsg').innerHTML = "❌ Errore caricamento file.";
     });
+
+    // Funzione per tradurre lo Slot ID in testo (es. 12 -> Belt)
+    function getSlotName(slotId) {
+        if (!metadata.slots) return `Slot ${slotId}`;
+        return metadata.slots[slotId] || `Slot ${slotId}`;
+    }
 
     function renderTable(list) {
         const body = document.getElementById('tableBody');
-        if (list.length === 0) {
-            body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">Nessun oggetto trovato.</td></tr>';
-            return;
-        }
-
         body.innerHTML = list.map(item => {
-            // Pulizia del testo delve (rimuove i ritorni a capo brutti)
-            const descrizione = item.delve_text ? item.delve_text.replace(/\n/g, '<br>') : 'Nessun dettaglio disponibile';
-            const drop = item.sources?.monsters?.one_time_drop ? `<br><small style="color:#00ff00">Drop: ${item.sources.monsters.one_time_drop.join(', ')}</small>` : '';
+            const descrizione = item.delve_text ? item.delve_text.replace(/\n/g, '<br>') : 'Nessun dettaglio';
+            
+            // Cerchiamo il nome della zona o del mob
+            let location = "Mappa Sconosciuta";
+            if (item.sources?.monsters?.one_time_drop) {
+                location = `Drop: ${item.sources.monsters.one_time_drop.join(', ')}`;
+            } else if (item.sources?.area) {
+                location = item.sources.area;
+            }
 
             return `
-                <tr style="border-bottom: 1px solid #333; background: rgba(255,255,255,0.02);">
-                    <td style="color:#4db8ff; font-weight:bold; padding:12px; width:30%;">
-                        ${item.name}
-                        ${drop}
+                <tr style="border-bottom: 1px solid #333;">
+                    <td style="color:#4db8ff; font-weight:bold; padding:10px;">
+                        ${item.name}<br>
+                        <span style="color:#888; font-size:0.8em;">${getSlotName(item.slot)}</span>
                     </td>
-                    <td style="font-size: 0.9em; color: #bbb; padding:12px; line-height:1.4;">
+                    <td style="font-size: 0.85em; color: #ccc; padding:10px;">
                         ${descrizione}
                     </td>
-                    <td style="color: #ffa500; font-weight:bold; text-align:center; width:10%;">
-                        Lvl ${item.level || item.bonus_level || '-'}
+                    <td style="color: #00ff00; font-size: 0.9em; padding:10px;">
+                        ${location}
                     </td>
                 </tr>
             `;
@@ -103,19 +107,14 @@
     function updateDisplay() {
         clearTimeout(timeout);
         const query = document.getElementById('txtSearch').value.toLowerCase().trim();
-        
-        if (query.length < 3) {
-            document.getElementById('tableBody').innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">Scrivi almeno 3 lettere per cercare...</td></tr>';
-            return;
-        }
+        if (query.length < 3) return;
 
-        // Aspetta che l'utente finisca di scrivere per non bloccare il browser
         timeout = setTimeout(() => {
             const filtered = allItems.filter(i => 
                 (i.name || "").toLowerCase().includes(query) || 
                 (i.delve_text || "").toLowerCase().includes(query)
             );
-            renderTable(filtered.slice(0, 50)); // Mostra i primi 50 risultati
+            renderTable(filtered.slice(0, 50));
         }, 300);
     }
 
