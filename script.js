@@ -3,7 +3,7 @@ const supabaseUrl = 'https://nakznpzquspjnfccqbsk.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ha3pucHpxdXNwam5mY2NxYnNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNTA5NDUsImV4cCI6MjA4OTkyNjk0NX0.6cl-3kFrXBRdX3Bm95RtVVs3TvdpHjVI6QqQGnzo8fI';
 
 // QUESTA È LA RIGA CRITICA - CONTROLLA LA "S" DOPO L'UGUALE:
-const supabase = Supabase.createClient(supabaseUrl, supabaseKey);
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 console.log("Connessione a Supabase inizializzata!");
 
