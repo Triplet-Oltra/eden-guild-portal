@@ -10,15 +10,16 @@ console.log("Connessione a Supabase inizializzata!");
 // Funzione Login Discord
 async function loginConDiscord() {
     console.log("Pulsante cliccato: avvio autenticazione...");
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'discord'
-        // Rimuoviamo il redirectTo per ora, così usa quello di default di Supabase
-    });
+    }); // <--- Questa chiude il "signInWithOAuth"
 
     if (error) {
         console.error("Errore durante il login:", error.message);
         alert("Errore: " + error.message);
-    }
+    } // <--- Questa chiude l' "if"
+} // <--- QUESTA CHIUDE LA FUNZIONE (L'ultima!)
 
 // Funzione per cambiare sezione (Database, Gilda, ecc.)
 function showSection(sectionId) {
