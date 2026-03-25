@@ -19,7 +19,7 @@ async function loginConDiscord() {
         console.error("Errore durante il login:", error.message);
         alert("Errore: " + error.message);
     }
-}
+
 // Funzione per cambiare sezione (Database, Gilda, ecc.)
 function showSection(sectionId) {
     // Nasconde tutte le sezioni
